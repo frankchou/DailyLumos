@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { signInWithGoogle } from '../services/authService'
+import { signInWithGoogle, signInWithTestAccount } from '../services/authService'
+
+const IS_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true'
 
 export function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -16,6 +18,17 @@ export function LoginPage() {
       if (!msg.includes('popup-closed') && !msg.includes('cancelled')) {
         setError('登入失敗，請再試一次')
       }
+      setLoading(false)
+    }
+  }
+
+  const handleDevLogin = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await signInWithTestAccount()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '測試登入失敗')
       setLoading(false)
     }
   }
@@ -143,6 +156,22 @@ export function LoginPage() {
             )}
             {loading ? '登入中...' : '使用 Google 帳號登入'}
           </button>
+
+          {/* Dev 快速登入（只在 emulator 模式顯示） */}
+          {IS_EMULATOR && (
+            <button
+              onClick={handleDevLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-sans text-xs tracking-wider transition-all duration-200 active:scale-95"
+              style={{
+                background: 'rgba(212,168,83,0.12)',
+                border: '1px dashed rgba(212,168,83,0.4)',
+                color: 'rgba(212,168,83,0.8)',
+              }}
+            >
+              ⚡ Dev 快速登入（本地測試）
+            </button>
+          )}
 
           {error && (
             <div className="w-full rounded-xl p-3" style={{ background: 'rgba(255,143,163,0.1)', border: '1px solid rgba(255,143,163,0.3)' }}>
