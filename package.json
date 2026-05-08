@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "VITE_USE_EMULATOR=true vite",
+    "emulator": "firebase emulators:start --import=.emulator-data --export-on-exit=.emulator-data",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
