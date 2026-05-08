@@ -1,0 +1,129 @@
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { SplashScreen } from './components/SplashScreen'
+import { Layout } from './components/Layout'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { DrawPage } from './pages/DrawPage'
+import { CollectionPage } from './pages/CollectionPage'
+import { LoginPage } from './pages/LoginPage'
+import { SetupGuidePage } from './pages/SetupGuidePage'
+import { useCardStore } from './store/cardStore'
+import { useAuthStore } from './store/authStore'
+import { onAuthChange } from './services/authService'
+import { isFirebaseConfigured } from './lib/firebase'
+
+function AuthenticatedApp() {
+  const { currentPage } = useCardStore()
+
+  return (
+    <Layout>
+      <AnimatePresence mode="wait">
+        {currentPage === 'draw' ? (
+          <motion.div
+            key="draw"
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.22 }}
+          >
+            <DrawPage />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="collection"
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 16 }}
+            transition={{ duration: 0.22 }}
+          >
+            <CollectionPage />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Layout>
+  )
+}
+
+export function App() {
+  const [showSplash, setShowSplash] = useState(true)
+  const { syncFromCloud, clearUserData } = useCardStore()
+  const { status, setUser, user } = useAuthStore()
+
+  // 監聽 Firebase Auth 狀態
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      setUser(firebaseUser)
+      if (firebaseUser && user?.uid !== firebaseUser.uid) {
+        await syncFromCloud({
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName ?? '使用者',
+          email: firebaseUser.email ?? '',
+          photoURL: firebaseUser.photoURL ?? '',
+        })
+      } else if (!firebaseUser) {
+        clearUserData()
+      }
+    })
+    return unsubscribe
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Firebase 未設定 → 顯示引導頁（不 crash）────────────────
+  if (!isFirebaseConfigured) {
+    return (
+      <>
+        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+        {!showSplash && <SetupGuidePage />}
+      </>
+    )
+  }
+
+  const isLoading = status === 'loading'
+  const isAuthenticated = status === 'authenticated'
+
+  return (
+    <ErrorBoundary>
+      {/* Splash */}
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+
+      {/* Auth 載入中 */}
+      {!showSplash && isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#FDF8F0' }}>
+          <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(212,168,83,0.2)" strokeWidth="2" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="#D4A853" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
+      )}
+
+      {/* 未登入 → 登入頁 */}
+      <AnimatePresence>
+        {!showSplash && !isLoading && !isAuthenticated && (
+          <motion.div
+            key="login"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LoginPage />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 已登入 → 主 App */}
+      <AnimatePresence>
+        {!showSplash && !isLoading && isAuthenticated && (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AuthenticatedApp />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </ErrorBoundary>
+  )
+}
