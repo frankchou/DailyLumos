@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCardStore } from '../store/cardStore'
 import { useDailyDraw } from '../hooks/useDailyDraw'
@@ -202,6 +202,13 @@ export function DrawPage() {
   const { draw } = useDailyDraw()
   const [drawState, setDrawState] = useState<DrawState>(todayCard ? 'done' : 'idle')
   const [flipped, setFlipped] = useState(!!todayCard)
+
+  useEffect(() => {
+    if (todayCard && drawState === 'idle') {
+      setDrawState('done')
+      setFlipped(true)
+    }
+  }, [todayCard]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDraw = useCallback(async () => {
     if (!canDrawToday() || drawState !== 'idle') return
