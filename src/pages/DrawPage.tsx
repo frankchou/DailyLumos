@@ -8,6 +8,7 @@ import { DrawButton } from '../components/DrawButton'
 import { CountdownTimer } from '../components/CountdownTimer'
 import { UserMenu } from '../components/UserMenu'
 import { getTodayDate } from '../constants/proverbs'
+import { getMidnightMs } from '../hooks/useCountdown'
 
 type DrawState = 'idle' | 'loading' | 'revealing' | 'done'
 
@@ -202,13 +203,25 @@ export function DrawPage() {
   const { draw } = useDailyDraw()
   const [drawState, setDrawState] = useState<DrawState>(todayCard ? 'done' : 'idle')
   const [flipped, setFlipped] = useState(!!todayCard)
+  const [today, setToday] = useState(getTodayDate)
 
+  // 同步完成後若已抽過，切換到 done 狀態
   useEffect(() => {
     if (todayCard && drawState === 'idle') {
       setDrawState('done')
       setFlipped(true)
     }
   }, [todayCard]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 午夜自動重置：精準在跨日時更新日期並允許重抽
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setToday(getTodayDate())
+      setDrawState('idle')
+      setFlipped(false)
+    }, getMidnightMs() + 500)
+    return () => clearTimeout(timer)
+  }, [today])
 
   const handleDraw = useCallback(async () => {
     if (!canDrawToday() || drawState !== 'idle') return
@@ -221,8 +234,6 @@ export function DrawPage() {
       setTimeout(() => setDrawState('done'), 750)
     }, 200)
   }, [canDrawToday, draw, drawState])
-
-  const today = getTodayDate()
 
   if (isSyncing) return <SyncingOverlay />
 
