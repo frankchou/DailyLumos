@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SplashScreen } from './components/SplashScreen'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { DrawPage } from './pages/DrawPage'
-import { CollectionPage } from './pages/CollectionPage'
 import { LoginPage } from './pages/LoginPage'
 import { SetupGuidePage } from './pages/SetupGuidePage'
+
+const DrawPage = lazy(() => import('./pages/DrawPage').then(m => ({ default: m.DrawPage })))
+const CollectionPage = lazy(() => import('./pages/CollectionPage').then(m => ({ default: m.CollectionPage })))
 import { useCardStore } from './store/cardStore'
 import { useAuthStore } from './store/authStore'
 import { onAuthChange } from './services/authService'
@@ -17,29 +18,31 @@ function AuthenticatedApp() {
 
   return (
     <Layout>
-      <AnimatePresence mode="wait">
-        {currentPage === 'draw' ? (
-          <motion.div
-            key="draw"
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{ duration: 0.22 }}
-          >
-            <DrawPage />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="collection"
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 16 }}
-            transition={{ duration: 0.22 }}
-          >
-            <CollectionPage />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <AnimatePresence mode="wait">
+          {currentPage === 'draw' ? (
+            <motion.div
+              key="draw"
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.22 }}
+            >
+              <DrawPage />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="collection"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 16 }}
+              transition={{ duration: 0.22 }}
+            >
+              <CollectionPage />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Suspense>
     </Layout>
   )
 }

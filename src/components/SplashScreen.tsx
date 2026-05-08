@@ -11,8 +11,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisible(false)
-      setTimeout(onFinish, 500) // 等待淡出動畫
-    }, 2200)
+      setTimeout(onFinish, 400)
+    }, 1400)
     return () => clearTimeout(timer)
   }, [onFinish])
 
@@ -36,15 +36,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           {/* Logo */}
           <motion.div
             className="flex flex-col items-center gap-4"
-            initial={{ opacity: 0, scale: 0.85, y: 10 }}
+            initial={{ opacity: 0, scale: 0.9, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             {/* 火焰圖示 */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
             >
               <svg width="48" height="60" viewBox="0 0 48 60" fill="none">
                 <path
@@ -77,7 +77,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                 style={{ color: 'rgba(240, 208, 138, 0.7)' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
+                transition={{ delay: 0.25, duration: 0.35 }}
               >
                 DAILY
               </motion.span>
@@ -90,7 +90,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                 }}
                 initial={{ opacity: 0, letterSpacing: '0.3em' }}
                 animate={{ opacity: 1, letterSpacing: '0.15em' }}
-                transition={{ delay: 0.5, duration: 0.7 }}
+                transition={{ delay: 0.25, duration: 0.5 }}
               >
                 LUMOS
               </motion.h1>
@@ -103,7 +103,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             style={{ color: 'rgba(196, 168, 130, 0.65)', letterSpacing: '0.08em' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.1, duration: 0.6 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
           >
             每天一句光，照亮前行的路
           </motion.p>
@@ -113,7 +113,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             className="absolute bottom-16 flex gap-3 items-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.4 }}
+            transition={{ delay: 0.85, duration: 0.3 }}
           >
             {['·', '✦', '·'].map((s, i) => (
               <span key={i} style={{ color: 'rgba(212, 168, 83, 0.4)', fontSize: i === 1 ? '12px' : '8px' }}>
