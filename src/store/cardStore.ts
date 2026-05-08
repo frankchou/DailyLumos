@@ -139,15 +139,11 @@ export const useCardStore = create<CardStore>((set, get) => ({
     }))
 
     if (uid) {
-      // 雲端儲存
-      try {
-        await Promise.all([
-          saveCard(uid, card),
-          updateLastDrawDate(uid, card.date),
-        ])
-      } catch (err) {
-        console.error('Failed to save card to Firestore:', err)
-      }
+      // 背景儲存，不阻塞 UI（樂觀更新已完成）
+      Promise.all([
+        saveCard(uid, card),
+        updateLastDrawDate(uid, card.date),
+      ]).catch(err => console.error('Failed to save card to Firestore:', err))
     } else {
       // Guest mode → localStorage
       const { cards, lastDrawDate, todayCard } = get()
