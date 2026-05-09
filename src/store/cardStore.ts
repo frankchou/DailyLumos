@@ -92,6 +92,13 @@ export const useCardStore = create<CardStore>((set, get) => ({
   setError: (e) => set({ error: e }),
 
   syncFromCloud: async (user) => {
+    // Mock user (本地 Codespaces 測試) → 直接從 localStorage 載入
+    if (user.uid === '__mock__') {
+      const local = localLoad()
+      set({ cards: local.cards, lastDrawDate: local.lastDrawDate, todayCard: local.todayCard })
+      return
+    }
+
     set({ isSyncing: true })
     try {
       // 確保 Firestore 有該用戶的 profile doc
@@ -138,14 +145,14 @@ export const useCardStore = create<CardStore>((set, get) => ({
       todayCard: card,
     }))
 
-    if (uid) {
+    if (uid && uid !== '__mock__') {
       // 背景儲存，不阻塞 UI（樂觀更新已完成）
       Promise.all([
         saveCard(uid, card),
         updateLastDrawDate(uid, card.date),
       ]).catch(err => console.error('Failed to save card to Firestore:', err))
     } else {
-      // Guest mode → localStorage
+      // Guest / mock user → localStorage
       const { cards, lastDrawDate, todayCard } = get()
       localSave({ cards, lastDrawDate, todayCard })
     }

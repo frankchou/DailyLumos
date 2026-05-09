@@ -9,9 +9,12 @@ import { SetupGuidePage } from './pages/SetupGuidePage'
 const DrawPage = lazy(() => import('./pages/DrawPage').then(m => ({ default: m.DrawPage })))
 const CollectionPage = lazy(() => import('./pages/CollectionPage').then(m => ({ default: m.CollectionPage })))
 import { useCardStore } from './store/cardStore'
-import { useAuthStore } from './store/authStore'
+import { useAuthStore, type AuthUser } from './store/authStore'
 import { onAuthChange } from './services/authService'
 import { isFirebaseConfigured } from './lib/firebase'
+
+const IS_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true'
+const MOCK_AUTH_KEY = 'daily-lumos-mock-auth'
 
 function AuthenticatedApp() {
   const { currentPage } = useCardStore()
@@ -50,13 +53,33 @@ function AuthenticatedApp() {
 export function App() {
   const [showSplash, setShowSplash] = useState(true)
   const { syncFromCloud, clearUserData } = useCardStore()
-  const { status, setUser, user } = useAuthStore()
+  const { status, setUser, setAuthUser } = useAuthStore()
 
-  // 監聽 Firebase Auth 狀態
+  // 本地 emulator：從 localStorage 還原 mock 用戶（完全跳過 Firebase Auth）
   useEffect(() => {
+    if (!IS_EMULATOR) return
+    const stored = localStorage.getItem(MOCK_AUTH_KEY)
+    if (stored) {
+      try {
+        const mockUser = JSON.parse(stored) as AuthUser
+        setAuthUser(mockUser)
+        syncFromCloud(mockUser)
+      } catch {
+        setAuthUser(null)
+      }
+    } else {
+      setAuthUser(null)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 正式環境：監聽 Firebase Auth 狀態
+  useEffect(() => {
+    if (IS_EMULATOR) return
+    let currentUid: string | null = null
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser)
-      if (firebaseUser && user?.uid !== firebaseUser.uid) {
+      if (firebaseUser && currentUid !== firebaseUser.uid) {
+        currentUid = firebaseUser.uid
         await syncFromCloud({
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName ?? '使用者',
@@ -64,6 +87,7 @@ export function App() {
           photoURL: firebaseUser.photoURL ?? '',
         })
       } else if (!firebaseUser) {
+        currentUid = null
         clearUserData()
       }
     })

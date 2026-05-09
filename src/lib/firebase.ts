@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 
 const {
   VITE_FIREBASE_API_KEY: apiKey,
@@ -28,9 +28,3 @@ export const app = isFirebaseConfigured
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
 export const googleProvider = new GoogleAuthProvider()
-
-// 本地開發時連 Firebase Emulator，不動到正式資料
-if (import.meta.env.VITE_USE_EMULATOR === 'true' && auth && db) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
-  connectFirestoreEmulator(db, '127.0.0.1', 8080)
-}

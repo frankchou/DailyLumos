@@ -23,6 +23,7 @@ interface AuthStore {
   user: AuthUser | null
   status: AuthStatus
   setUser: (user: User | null) => void
+  setAuthUser: (user: AuthUser | null) => void
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -32,6 +33,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setUser: (firebaseUser) => {
     if (firebaseUser) {
       set({ user: toAuthUser(firebaseUser), status: 'authenticated' })
+    } else {
+      set({ user: null, status: 'unauthenticated' })
+    }
+  },
+
+  setAuthUser: (user) => {
+    if (user) {
+      set({ user, status: 'authenticated' })
     } else {
       set({ user: null, status: 'unauthenticated' })
     }
