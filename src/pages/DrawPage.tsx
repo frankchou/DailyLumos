@@ -7,7 +7,7 @@ import { CardBack } from '../components/CardBack'
 import { DrawButton } from '../components/DrawButton'
 import { CountdownTimer } from '../components/CountdownTimer'
 import { UserMenu } from '../components/UserMenu'
-import { getTodayDate } from '../constants/proverbs'
+import { getTodayDate } from '../constants/bible'
 import { getMidnightMs } from '../hooks/useCountdown'
 
 type DrawState = 'idle' | 'loading' | 'revealing' | 'done'

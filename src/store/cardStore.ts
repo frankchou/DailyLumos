@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { VerseCard, AppPage } from '../types'
 import { CARD_THEMES } from '../constants/themes'
-import { getTodayDate } from '../constants/proverbs'
+import { getTodayDate } from '../constants/bible'
 import {
   saveCard,
   loadCards,

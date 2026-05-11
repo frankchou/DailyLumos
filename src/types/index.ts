@@ -8,16 +8,16 @@ export interface CardTheme {
   textColor: string
   subTextColor: string
   borderColor: string
-  chapterRange: [number, number]
+  books: string[] // 對應的聖經書卷代碼陣列（OSIS 3 碼）
 }
 
 export interface VerseCard {
   id: string
   date: string           // "YYYY-MM-DD"
-  book: string           // "PRO"
+  book: string           // OSIS 書卷代碼，如 "GEN"、"PSA"、"JHN"
   chapter: number
   verse: number
-  reference: string      // "箴言 3:5"
+  reference: string      // "創世記 1:1"、"詩篇 23:1"
   text: string
   theme: CardTheme
   createdAt: number

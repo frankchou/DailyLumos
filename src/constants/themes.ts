@@ -1,5 +1,14 @@
 import type { CardTheme } from '../types'
 
+/**
+ * 主題與聖經書卷的對應：依書卷內容氛圍手工映射
+ *   晨曦 ☀️  開始、光、新生命       → 創世記、約書亞記、四福音、使徒行傳
+ *   甘露 💧  智慧、滋潤、生命之道   → 詩篇、箴言、雅各書
+ *   溫泉 🌸  愛、溫柔、關係         → 路得記、雅歌、何西阿、腓利門、約一二三
+ *   星光 ✨  深邃、敬畏、異象       → 士師、撒上下、王上下、智慧書（深沉者）、先知書（哀歎/異象）
+ *   暖燈 🪔  教導、引導、安慰       → 摩西律法書、歷代志、復興時期、保羅書信、希伯來、彼前後
+ *   彩虹 🌈  盟約、應許、奇蹟       → 以斯帖、啟示錄
+ */
 export const CARD_THEMES: CardTheme[] = [
   {
     id: 'dawn',
@@ -9,7 +18,7 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#4A2800',
     subTextColor: 'rgba(74, 40, 0, 0.65)',
     borderColor: 'rgba(255, 200, 100, 0.4)',
-    chapterRange: [1, 5],
+    books: ['GEN', 'JOS', 'MAT', 'MRK', 'LUK', 'JHN', 'ACT'],
   },
   {
     id: 'dew',
@@ -19,7 +28,7 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#1A3D2B',
     subTextColor: 'rgba(26, 61, 43, 0.65)',
     borderColor: 'rgba(100, 180, 130, 0.4)',
-    chapterRange: [6, 10],
+    books: ['PSA', 'PRO', 'JAS'],
   },
   {
     id: 'spring',
@@ -29,7 +38,7 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#4A1528',
     subTextColor: 'rgba(74, 21, 40, 0.65)',
     borderColor: 'rgba(255, 100, 140, 0.3)',
-    chapterRange: [11, 15],
+    books: ['RUT', 'SNG', 'HOS', 'PHM', '1JN', '2JN', '3JN'],
   },
   {
     id: 'starlight',
@@ -39,7 +48,13 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#E8D8FF',
     subTextColor: 'rgba(232, 216, 255, 0.65)',
     borderColor: 'rgba(180, 150, 255, 0.3)',
-    chapterRange: [16, 20],
+    books: [
+      'JDG', '1SA', '2SA', '1KI', '2KI',
+      'JOB', 'ECC',
+      'JER', 'LAM', 'EZK', 'DAN',
+      'JOL', 'AMO', 'OBA', 'NAM', 'HAB', 'ZEP',
+      'JUD',
+    ],
   },
   {
     id: 'lantern',
@@ -49,7 +64,14 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#3D2200',
     subTextColor: 'rgba(61, 34, 0, 0.65)',
     borderColor: 'rgba(200, 130, 50, 0.4)',
-    chapterRange: [21, 25],
+    books: [
+      'EXO', 'LEV', 'NUM', 'DEU',
+      '1CH', '2CH', 'EZR', 'NEH',
+      'ISA', 'JON', 'MIC', 'HAG', 'ZEC', 'MAL',
+      'ROM', '1CO', '2CO', 'GAL', 'EPH', 'PHP', 'COL',
+      '1TH', '2TH', '1TI', '2TI', 'TIT',
+      'HEB', '1PE', '2PE',
+    ],
   },
   {
     id: 'rainbow',
@@ -59,13 +81,18 @@ export const CARD_THEMES: CardTheme[] = [
     textColor: '#2D1F4A',
     subTextColor: 'rgba(45, 31, 74, 0.65)',
     borderColor: 'rgba(150, 100, 180, 0.3)',
-    chapterRange: [26, 31],
+    books: ['EST', 'REV'],
   },
 ]
 
-export function getThemeForChapter(chapter: number): CardTheme {
-  const theme = CARD_THEMES.find(
-    (t) => chapter >= t.chapterRange[0] && chapter <= t.chapterRange[1]
-  )
-  return theme ?? CARD_THEMES[0]!
+// 反向快查表：bookCode → CardTheme
+const BOOK_TO_THEME: Record<string, CardTheme> = {}
+for (const theme of CARD_THEMES) {
+  for (const book of theme.books) {
+    BOOK_TO_THEME[book] = theme
+  }
+}
+
+export function getThemeForBook(book: string): CardTheme {
+  return BOOK_TO_THEME[book] ?? CARD_THEMES[0]!
 }

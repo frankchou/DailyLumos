@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { useCardStore } from '../store/cardStore'
 import { useAuthStore } from '../store/authStore'
-import { fetchVerse } from '../services/bibleApi'
-import { randomProverbsVerse, formatReference, getTodayDate } from '../constants/proverbs'
-import { getThemeForChapter } from '../constants/themes'
+import { fetchRandomVerseInChapter } from '../services/bibleApi'
+import { randomBibleChapter, formatReference, getTodayDate } from '../constants/bible'
+import { getThemeForBook } from '../constants/themes'
 import type { VerseCard } from '../types'
 
 function generateId(): string {
@@ -21,19 +21,20 @@ export function useDailyDraw() {
     setError(null)
 
     try {
-      const { chapter, verse } = randomProverbsVerse()
-      const { text } = await fetchVerse(chapter, verse)
-      const theme = getThemeForChapter(chapter)
+      const { book, chapter } = randomBibleChapter()
+      const result = await fetchRandomVerseInChapter(book, chapter)
+      // 若 API 失敗走後備，result.book/chapter/verse 來自本地精選經文（可能是別卷書）
+      const theme = getThemeForBook(result.book)
       const today = getTodayDate()
 
       const card: VerseCard = {
         id: generateId(),
         date: today,
-        book: 'PRO',
-        chapter,
-        verse,
-        reference: formatReference(chapter, verse),
-        text,
+        book: result.book,
+        chapter: result.chapter,
+        verse: result.verse,
+        reference: formatReference(result.book, result.chapter, result.verse),
+        text: result.text,
         theme,
         createdAt: Date.now(),
       }
