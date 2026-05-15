@@ -298,16 +298,8 @@ export function ChapterModal({ open, book, chapter, highlightVerse, onClose }: C
                   className="flex items-center gap-1.5 font-sans tracking-wide"
                   style={{ color: '#C4A882', fontSize: '11px' }}
                 >
-                  <svg width="22" height="12" viewBox="0 0 22 12" fill="none" aria-hidden="true">
-                    <path
-                      d="M5 6H17M5 6L8 3M5 6L8 9M17 6L14 3M17 6L14 9"
-                      stroke="#C4A882"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  手指左右滑動翻頁
+                  <SwipeHandIcon />
+                  左右滑動翻頁
                 </span>
                 <PageButton label="上一頁" onClick={() => turnPage('prev')} />
               </div>
@@ -374,6 +366,37 @@ function HorizontalView({
 }
 
 // ─── 小元件 ─────────────────────────────────────────────────
+// 手指左右滑動 icon：指向上的手 + 左右動作箭頭
+function SwipeHandIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* 指向上的手 */}
+      <path
+        d="M10.2 14V7.5a1.8 1.8 0 0 1 3.6 0V12.5h1.6a1.7 1.7 0 0 1 1.7 1.7V16a3.5 3.5 0 0 1-3.5 3.5h-2a3.7 3.7 0 0 1-3.1-1.7L6.9 15.3a1.6 1.6 0 0 1 2.7-1.7l0.6 0.9Z"
+        stroke="#C4A882"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 左右動作箭頭 */}
+      <path
+        d="M5 8.5 3 10.5 5 12.5"
+        stroke="#C4A882"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 8.5 21 10.5 19 12.5"
+        stroke="#C4A882"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center py-12">

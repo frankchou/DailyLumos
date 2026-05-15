@@ -1,5 +1,54 @@
 import type { VerseCard as VerseCardType } from '../types'
 
+// AI 解析 icon：放大鏡（檢視／解讀），風格對齊系統其他線稿 icon
+// filled = 已有快取的解析（鏡片填色），否則線稿
+function AnalysisIcon({ color, filled }: { color: string; filled: boolean }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* 鏡片 */}
+      <circle
+        cx="10"
+        cy="10"
+        r="6.5"
+        stroke={color}
+        strokeWidth="1.7"
+        fill={filled ? color : 'none'}
+        fillOpacity={filled ? 0.3 : 0}
+      />
+      {/* 手把 */}
+      <path
+        d="M14.7 14.7L20 20"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+// 卡片正面可容納的大約字數；超過則在句末標點處節錄（避免裁切）
+const MAX_CARD_CHARS = 88
+
+function lastIndexOfAny(s: string, chars: string): number {
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (chars.includes(s[i]!)) return i
+  }
+  return -1
+}
+
+function fitVerseText(text: string): string {
+  if (text.length <= MAX_CARD_CHARS) return text
+  const window = text.slice(0, MAX_CARD_CHARS)
+  // 在句末標點（。；！？）斷句，其次逗號；節錄本身即為完整一句，不加省略號
+  let cut = lastIndexOfAny(window, '。；！？')
+  if (cut < MAX_CARD_CHARS * 0.45) {
+    const comma = lastIndexOfAny(window, '，、')
+    if (comma > cut) cut = comma
+  }
+  if (cut > 0) return text.slice(0, cut + 1)
+  return window
+}
+
 interface VerseCardProps {
   card: VerseCardType
   size?: 'full' | 'mini'
@@ -23,6 +72,8 @@ export function VerseCard({
   const showAnalysisBtn = !isMini && !!onAnalysisClick
   const refClickable = !isMini && !!onReferenceClick
   const hasCachedAnalysis = !!aiAnalysis
+  // mini 靠 line-clamp 截斷；full 用句末標點節錄超長的節，避免裁切
+  const shownText = isMini ? text : fitVerseText(text)
 
   return (
     <div
@@ -60,14 +111,14 @@ export function VerseCard({
             e.stopPropagation()
             onAnalysisClick!()
           }}
-          className="absolute font-sans tracking-wider transition-all active:scale-95 z-10"
+          className="absolute flex items-center gap-1 font-sans tracking-wider transition-all active:scale-95 z-10"
           style={{
             top: '20px',
             right: '20px',
             fontSize: '10px',
             color: theme.textColor,
             opacity: 0.85,
-            padding: '6px 12px',
+            padding: '6px 11px',
             borderRadius: '999px',
             background: 'rgba(255,255,255,0.22)',
             border: `1px solid ${theme.borderColor}`,
@@ -77,7 +128,8 @@ export function VerseCard({
           }}
           aria-label="AI 解析"
         >
-          {hasCachedAnalysis ? '✦ AI' : '✧ AI'}
+          <AnalysisIcon color={theme.textColor} filled={hasCachedAnalysis} />
+          AI
         </button>
       )}
 
@@ -95,7 +147,7 @@ export function VerseCard({
             overflow: isMini ? 'hidden' : 'visible',
           }}
         >
-          {text}
+          {shownText}
         </p>
       </div>
 

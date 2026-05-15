@@ -45,7 +45,7 @@ export const BIBLE_VERSES_LOCAL: LocalVerse[] = [
   { book: 'PSA', chapter: 23, verse: 1, text: '耶和華是我的牧者，我必不致缺乏。' },
   { book: 'PSA', chapter: 27, verse: 1, text: '耶和華是我的亮光，是我的拯救，我還怕誰呢？耶和華是我性命的保障，我還懼誰呢？' },
   { book: 'PSA', chapter: 46, verse: 1, text: '神是我們的避難所，是我們的力量，是我們在患難中隨時的幫助。' },
-  { book: 'PSA', chapter: 46, verse: 10, text: '你們要休息，要知道我是神！' },
+  { book: 'PSA', chapter: 46, verse: 10, text: '你們要休息，要知道我是神！我必在外邦中被尊崇，在遍地上也被尊崇。' },
   { book: 'PSA', chapter: 91, verse: 1, text: '住在至高者隱密處的，必住在全能者的蔭下。' },
   { book: 'PSA', chapter: 119, verse: 105, text: '你的話是我腳前的燈，是我路上的光。' },
   { book: 'PSA', chapter: 121, verse: 1, text: '我要向山舉目；我的幫助從何而來？' },
@@ -86,7 +86,7 @@ export const BIBLE_VERSES_LOCAL: LocalVerse[] = [
   { book: 'ZEP', chapter: 3, verse: 17, text: '耶和華你的神是施行拯救、大有能力的主。祂在你中間必因你歡欣喜樂，默然愛你，且因你喜樂而歡呼。' },
   { book: 'HAG', chapter: 2, verse: 9, text: '這殿後來的榮耀必大過先前的榮耀；在這地方我必賜平安。這是萬軍之耶和華說的。' },
   { book: 'ZEC', chapter: 4, verse: 6, text: '不是倚靠勢力，不是倚靠才能，乃是倚靠我的靈方能成事。這是萬軍之耶和華說的。' },
-  { book: 'MAL', chapter: 3, verse: 10, text: '萬軍之耶和華說：你們要將當納的十分之一全然送入倉庫…以此試試我，是否為你們敞開天上的窗戶，傾福與你們，甚至無處可容。' },
+  { book: 'MAL', chapter: 3, verse: 10, text: '萬軍之耶和華說：你們要將當納的十分之一全然送入倉庫，使我家有糧，以此試試我，是否為你們敞開天上的窗戶，傾福與你們，甚至無處可容。' },
 
   // ── 福音書 ────────────────────────────────────────────
   { book: 'MAT', chapter: 5, verse: 14, text: '你們是世上的光。城造在山上是不能隱藏的。' },
