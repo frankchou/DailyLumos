@@ -64,10 +64,28 @@ body {
   -webkit-backface-visibility: hidden;
   border-radius: 24px;
   overflow: hidden;
+  /* 行動瀏覽器不對「獨立合成圖層」（毛玻璃 backdrop-filter 等）套用
+     backface-visibility，翻面後正面圖層仍算繪 → 殘影。
+     額外用 visibility 在翻面過半（0.35s = 0.7s 的一半）硬切換整個面，
+     visibility:hidden 連合成圖層也一併不算繪。外觀與動畫不變。 */
+  transition: visibility 0s linear 0.35s;
 }
 
 .card-back {
   transform: rotateY(180deg);
+}
+
+/* 正面：翻面後隱藏 */
+.card-inner.flipped > .card-face:not(.card-back) {
+  visibility: hidden;
+}
+
+/* 背面：未翻面時隱藏，翻面後顯示 */
+.card-face.card-back {
+  visibility: hidden;
+}
+.card-inner.flipped > .card-face.card-back {
+  visibility: visible;
 }
 
 /* Scrollbar */

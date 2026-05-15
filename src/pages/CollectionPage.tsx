@@ -85,7 +85,12 @@ function CardGrid({ cards, onSelect }: { cards: VerseCardType[]; onSelect: (c: V
 
 export function CollectionPage() {
   const { cards, setCurrentPage } = useCardStore()
-  const [selectedCard, setSelectedCard] = useState<VerseCardType | null>(null)
+  // 只存 id，selected card 即時從 store 查
+  // → AI 解析存檔後 store 的 cards 更新，這裡會跟著拿到最新的（含 aiAnalysis），不會 stale
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selectedCard: VerseCardType | null = selectedId
+    ? cards.find((c) => c.id === selectedId) ?? null
+    : null
 
   return (
     <div className="min-h-screen pb-24 lg:pb-10" style={{ background: '#FDF8F0' }}>
@@ -127,13 +132,13 @@ export function CollectionPage() {
       ) : (
         <main className="px-4 lg:px-10">
           <div className="max-w-6xl">
-            <CardGrid cards={cards} onSelect={setSelectedCard} />
+            <CardGrid cards={cards} onSelect={(c) => setSelectedId(c.id)} />
           </div>
         </main>
       )}
 
       {/* Modal */}
-      <CardModal card={selectedCard} onClose={() => setSelectedCard(null)} />
+      <CardModal card={selectedCard} onClose={() => setSelectedId(null)} />
     </div>
   )
 }
