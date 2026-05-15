@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { VerseCard as VerseCardType } from '../types'
 import { VerseCard } from './VerseCard'
 import { ChapterModal } from './ChapterModal'
 import { useCardStore } from '../store/cardStore'
 import { useAuthStore } from '../store/authStore'
+import { parseAnalysisSections } from '../lib/aiPrompt'
 
 interface AnalysisCardProps {
   card: VerseCardType
@@ -168,17 +169,7 @@ function AnalysisBack({
         ) : error ? (
           <ErrorState message={error} />
         ) : (
-          <p
-            className="font-serif leading-relaxed"
-            style={{
-              color: '#F0E0BE',
-              fontSize: '14px',
-              lineHeight: '1.95',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {card.aiAnalysis}
-          </p>
+          <AnalysisBody text={card.aiAnalysis ?? ''} />
         )}
       </div>
 
@@ -234,6 +225,45 @@ function LoadingShimmer() {
       >
         正在為你細細解讀…
       </motion.p>
+    </div>
+  )
+}
+
+// ─── 解析內文：三段式，每段標題粗體、內文正常字 ───────────────
+function AnalysisBody({ text }: { text: string }) {
+  const sections = useMemo(() => parseAnalysisSections(text), [text])
+
+  return (
+    <div className="flex flex-col gap-5">
+      {sections.map((s, i) => (
+        <div key={i} className="flex flex-col gap-2">
+          {s.heading && (
+            <h3
+              className="font-serif"
+              style={{
+                fontSize: '17px',
+                color: '#F0D08A',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {s.heading}
+            </h3>
+          )}
+          <p
+            className="font-serif leading-relaxed"
+            style={{
+              color: '#F2E3C0',
+              fontSize: '16px',
+              lineHeight: '2.0',
+              fontWeight: 400,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {s.body}
+          </p>
+        </div>
+      ))}
     </div>
   )
 }

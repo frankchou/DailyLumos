@@ -84,6 +84,15 @@ body {
   border-radius: 2px;
 }
 
+/* 隱藏捲軸但保留滑動功能（章節 modal 直書翻頁用）*/
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Safe area */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);

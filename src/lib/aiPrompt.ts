@@ -2,19 +2,23 @@
 // api/analyze.ts (Vercel Edge) 與 vite.config.ts (dev middleware) 共用
 
 export const AI_MODEL = 'claude-haiku-4-5-20251001'
-export const AI_MAX_TOKENS = 700
+export const AI_MAX_TOKENS = 900
 
 export const AI_SYSTEM_PROMPT = `你是一位溫和、富有同理心的基督教神學老師。
-使用者每天會抽到一節聖經經文，請為他們提供一段約 150-250 字的繁體中文解析。
+為使用者抽到的聖經經文寫一段親近而有深度的解析，分成三段，每段都有明確標題。
 
-要求：
-1. 用溫暖、親近、像跟朋友分享的語氣，避免說教
-2. 包含三個層次但自然成段（不要使用編號或標題）：
-   - 經文字面/處境意義
-   - 神學或靈意層面
-   - 對現代日常生活的應用
-3. 直接給解析內容，不要重複「這節經文是說…」這類開頭
-4. 使用繁體中文（台灣慣用語）`
+嚴格遵守以下格式（每段以「## 標題」開頭、換行寫內文，三段都要有）：
+
+## 書卷背景
+60-90 字。介紹這節經文出自的書卷、寫作背景、整段所在的上下文脈絡。
+
+## 經文含義
+80-110 字。解釋這節經文本身的意思、字面與靈意層面、神學要點。
+
+## 生活應用
+80-110 字。把這節經文具體應用到當代日常生活，溫暖、不說教，可以給簡短的場景例子。
+
+整體用繁體中文（台灣慣用語），語氣溫暖、像跟朋友分享。`
 
 interface AnthropicTextBlock {
   type: 'text'
@@ -49,7 +53,7 @@ export async function callAnthropicAnalysis(
       messages: [
         {
           role: 'user',
-          content: `今日的經文：\n${reference}\n${text}\n\n請為這節經文寫一段解析。`,
+          content: `今日的經文：\n${reference}\n${text}\n\n請依照三段式格式為這節經文寫解析。`,
         },
       ],
     }),
@@ -65,4 +69,66 @@ export async function callAnthropicAnalysis(
   const analysis = block?.type === 'text' ? block.text.trim() : ''
   if (!analysis) throw new Error('Empty response from Claude')
   return analysis
+}
+
+// ─── 解析回傳格式 ─────────────────────────────────────────────
+// 新格式：## 書卷背景\n內文\n\n## 經文含義\n內文 ...
+// 舊格式（沒有 ##，但通常有 3 段空行分隔）：自動套上三個標準標題
+
+export interface AnalysisSection {
+  heading: string
+  body: string
+}
+
+export const STANDARD_HEADINGS = ['書卷背景', '經文含義', '生活應用']
+
+export function parseAnalysisSections(text: string): AnalysisSection[] {
+  const trimmed = text.trim()
+  if (!trimmed) return [{ heading: '', body: '' }]
+
+  // ── 新格式：含 ## 標記 ──
+  if (/(^|\n)##\s+/.test(trimmed)) {
+    const parts = trimmed
+      .split(/\n*##\s+/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+
+    const sections: AnalysisSection[] = []
+    for (const part of parts) {
+      const nl = part.indexOf('\n')
+      if (nl === -1) {
+        sections.push({ heading: '', body: part })
+      } else {
+        const heading = part.slice(0, nl).trim()
+        const body = part.slice(nl + 1).trim()
+        sections.push({ heading, body })
+      }
+    }
+    if (sections.length > 0) return sections
+  }
+
+  // ── 舊格式：用空行切段 ──
+  const paragraphs = trimmed
+    .split(/\n\s*\n+/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+
+  // 剛好 3 段 → 套用標準三標題
+  if (paragraphs.length === 3) {
+    return paragraphs.map((body, i) => ({
+      heading: STANDARD_HEADINGS[i]!,
+      body,
+    }))
+  }
+
+  // 其他段數 → 每段給對應標題（不足 3 個就留空標題）
+  if (paragraphs.length > 1) {
+    return paragraphs.map((body, i) => ({
+      heading: STANDARD_HEADINGS[i] ?? '',
+      body,
+    }))
+  }
+
+  // 單段純文字 → 無標題整段顯示
+  return [{ heading: '', body: trimmed }]
 }

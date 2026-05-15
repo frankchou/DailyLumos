@@ -53,13 +53,41 @@ export function VerseCard({
         </span>
       </div>
 
+      {/* AI 解析按鈕（右上角，只在 full + 有 callback 時顯示）*/}
+      {showAnalysisBtn && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onAnalysisClick!()
+          }}
+          className="absolute font-sans tracking-wider transition-all active:scale-95 z-10"
+          style={{
+            top: '20px',
+            right: '20px',
+            fontSize: '10px',
+            color: theme.textColor,
+            opacity: 0.85,
+            padding: '6px 12px',
+            borderRadius: '999px',
+            background: 'rgba(255,255,255,0.22)',
+            border: `1px solid ${theme.borderColor}`,
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            letterSpacing: '0.1em',
+          }}
+          aria-label="AI 解析"
+        >
+          {hasCachedAnalysis ? '✦ AI' : '✧ AI'}
+        </button>
+      )}
+
       {/* 箴言文字 */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 items-center justify-center">
         <p
           className="font-serif text-center leading-relaxed"
           style={{
             color: theme.textColor,
-            fontSize: isMini ? '12px' : '18px',
+            fontSize: isMini ? '12px' : '17px',
             lineHeight: isMini ? '1.7' : '1.9',
             display: '-webkit-box',
             WebkitLineClamp: isMini ? 5 : undefined,
@@ -69,30 +97,6 @@ export function VerseCard({
         >
           {text}
         </p>
-
-        {/* AI 解析按鈕（只在 full + 有 callback 時顯示）*/}
-        {showAnalysisBtn && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onAnalysisClick!()
-            }}
-            className="font-sans tracking-wider transition-all active:scale-95"
-            style={{
-              fontSize: '11px',
-              color: theme.textColor,
-              opacity: 0.82,
-              padding: '7px 16px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.18)',
-              border: `1px solid ${theme.borderColor}`,
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-            }}
-          >
-            {hasCachedAnalysis ? '✦ AI 解析' : '✧ AI 解析'}
-          </button>
-        )}
       </div>
 
       {/* 底部分隔線 + 章節 + 日期 */}
