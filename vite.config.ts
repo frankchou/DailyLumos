@@ -1,12 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import Anthropic from '@anthropic-ai/sdk'
-import {
-  AI_MODEL,
-  AI_MAX_TOKENS,
-  AI_SYSTEM_PROMPT,
-  buildUserPrompt,
-} from './src/lib/aiPrompt'
+import { callAnthropicAnalysis } from './src/lib/aiPrompt'
 
 /**
  * 開發階段用的 /api/analyze middleware：
@@ -46,21 +40,11 @@ function devAnalyzeApi(apiKey: string | undefined): Plugin {
               return
             }
 
-            const client = new Anthropic({ apiKey })
-            const msg = await client.messages.create({
-              model: AI_MODEL,
-              max_tokens: AI_MAX_TOKENS,
-              system: AI_SYSTEM_PROMPT,
-              messages: [
-                { role: 'user', content: buildUserPrompt(body.reference, body.text) },
-              ],
-            })
-            const first = msg.content[0]
-            const analysis = first?.type === 'text' ? first.text.trim() : ''
-            if (!analysis) {
-              send(res, 502, { error: 'Empty response from Claude' })
-              return
-            }
+            const analysis = await callAnthropicAnalysis(
+              apiKey,
+              body.reference,
+              body.text
+            )
             send(res, 200, { analysis })
           } catch (err) {
             send(res, 502, {
@@ -84,7 +68,6 @@ function send(
 }
 
 export default defineConfig(({ mode }) => {
-  // loadEnv 讀 .env / .env.local / .env.<mode>，這裡只取 ANTHROPIC_ 開頭
   const env = loadEnv(mode, process.cwd(), 'ANTHROPIC_')
   return {
     plugins: [react(), devAnalyzeApi(env.ANTHROPIC_API_KEY)],

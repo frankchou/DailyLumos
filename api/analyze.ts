@@ -1,14 +1,9 @@
 // Vercel Serverless Function (Edge runtime)：
-// 用 Claude Haiku 為單節經文生成靈修式解析
-// 需要環境變數 ANTHROPIC_API_KEY（在 Vercel dashboard 設定）
+// 用 Claude Haiku 為單節經文生成靈修式解析。
+// 直接 fetch Anthropic REST API；不引入 @anthropic-ai/sdk（含 node:fs 等 Edge 不支援的模組）。
+// 需要環境變數 ANTHROPIC_API_KEY（在 Vercel dashboard 設定）。
 
-import Anthropic from '@anthropic-ai/sdk'
-import {
-  AI_MODEL,
-  AI_MAX_TOKENS,
-  AI_SYSTEM_PROMPT,
-  buildUserPrompt,
-} from '../src/lib/aiPrompt'
+import { callAnthropicAnalysis } from '../src/lib/aiPrompt'
 
 interface AnalyzeRequest {
   reference: string
@@ -42,19 +37,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const client = new Anthropic({ apiKey })
-    const message = await client.messages.create({
-      model: AI_MODEL,
-      max_tokens: AI_MAX_TOKENS,
-      system: AI_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: buildUserPrompt(reference, text) }],
-    })
-
-    const firstBlock = message.content[0]
-    const analysis = firstBlock?.type === 'text' ? firstBlock.text.trim() : ''
-
-    if (!analysis) return jsonResponse({ error: 'Empty response from Claude' }, 502)
-
+    const analysis = await callAnthropicAnalysis(apiKey, reference, text)
     return jsonResponse({ analysis }, 200)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
