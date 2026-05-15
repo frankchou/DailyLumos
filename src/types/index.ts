@@ -21,6 +21,7 @@ export interface VerseCard {
   text: string
   theme: CardTheme
   createdAt: number
+  aiAnalysis?: string    // AI 解析內容（首次點開後快取）
 }
 
 export interface BibleApiResponse {

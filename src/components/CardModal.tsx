@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { VerseCard } from '../types'
-import { VerseCard as VerseCardComponent } from './VerseCard'
+import { AnalysisCard } from './AnalysisCard'
 
 interface CardModalProps {
   card: VerseCard | null
@@ -59,7 +59,7 @@ export function CardModal({ card, onClose }: CardModalProps) {
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <VerseCardComponent card={card} size="full" className="w-full h-full" />
+            <AnalysisCard card={card} width="100%" height="100%" />
 
             {/* 關閉按鈕 */}
             <button

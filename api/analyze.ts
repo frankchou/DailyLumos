@@ -1,0 +1,73 @@
+// Vercel Serverless Function (Edge runtime)：
+// 用 Claude Haiku 為單節經文生成靈修式解析
+// 需要環境變數 ANTHROPIC_API_KEY（在 Vercel dashboard 設定）
+
+import Anthropic from '@anthropic-ai/sdk'
+import {
+  AI_MODEL,
+  AI_MAX_TOKENS,
+  AI_SYSTEM_PROMPT,
+  buildUserPrompt,
+} from '../src/lib/aiPrompt'
+
+interface AnalyzeRequest {
+  reference: string
+  text: string
+}
+
+export const config = {
+  runtime: 'edge',
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed' }, 405)
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    return jsonResponse({ error: 'ANTHROPIC_API_KEY not configured on server' }, 500)
+  }
+
+  let body: AnalyzeRequest
+  try {
+    body = (await req.json()) as AnalyzeRequest
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON' }, 400)
+  }
+
+  const { reference, text } = body
+  if (!reference || !text) {
+    return jsonResponse({ error: 'Missing reference or text' }, 400)
+  }
+
+  try {
+    const client = new Anthropic({ apiKey })
+    const message = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: AI_MAX_TOKENS,
+      system: AI_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: buildUserPrompt(reference, text) }],
+    })
+
+    const firstBlock = message.content[0]
+    const analysis = firstBlock?.type === 'text' ? firstBlock.text.trim() : ''
+
+    if (!analysis) return jsonResponse({ error: 'Empty response from Claude' }, 502)
+
+    return jsonResponse({ analysis }, 200)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    return jsonResponse({ error: msg }, 502)
+  }
+}
+
+function jsonResponse(data: unknown, status: number): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  })
+}

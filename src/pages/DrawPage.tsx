@@ -4,6 +4,7 @@ import { useCardStore } from '../store/cardStore'
 import { useDailyDraw } from '../hooks/useDailyDraw'
 import { VerseCard } from '../components/VerseCard'
 import { CardBack } from '../components/CardBack'
+import { AnalysisCard } from '../components/AnalysisCard'
 import { DrawButton } from '../components/DrawButton'
 import { CountdownTimer } from '../components/CountdownTimer'
 import { UserMenu } from '../components/UserMenu'
@@ -138,30 +139,40 @@ function CardArea({ flipped, drawState, todayCard, handleDraw, isLoading, canDra
   return (
     <div className="flex flex-col items-center gap-8">
       {/* Card */}
-      <div
-        className="perspective"
-        style={{ width: '280px', height: '400px' }}
-      >
-        <div className={`card-inner ${flipped ? 'flipped' : ''}`}>
-          <div className="card-face card-back">
-            <AnimatePresence>
-              {(drawState === 'done' || drawState === 'revealing') && todayCard && (
-                <motion.div
-                  className="w-full h-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.35, duration: 0.4 }}
-                >
-                  <VerseCard card={todayCard} size="full" className="w-full h-full" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <div className="card-face">
-            <CardBack className="w-full h-full" />
+      {drawState === 'done' && todayCard ? (
+        /* 抽完後切換成可互動的 AnalysisCard（自帶翻面 + AI 解析 + 章節 modal）*/
+        <AnalysisCard
+          card={todayCard}
+          width="280px"
+          height="400px"
+        />
+      ) : (
+        /* 抽卡進行中 / 尚未抽：維持原本的翻面動畫 */
+        <div
+          className="perspective"
+          style={{ width: '280px', height: '400px' }}
+        >
+          <div className={`card-inner ${flipped ? 'flipped' : ''}`}>
+            <div className="card-face card-back">
+              <AnimatePresence>
+                {drawState === 'revealing' && todayCard && (
+                  <motion.div
+                    className="w-full h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.35, duration: 0.4 }}
+                  >
+                    <VerseCard card={todayCard} size="full" className="w-full h-full" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="card-face">
+              <CardBack className="w-full h-full" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 手機版底部按鈕/倒數（桌面版這裡只顯示按鈕，倒數在左欄） */}
       <AnimatePresence mode="wait">

@@ -8,6 +8,7 @@ import {
   updateLastDrawDate,
   ensureUserProfile,
   getUserLastDrawDate,
+  updateCardAnalysis,
   type StoredCard,
 } from '../services/firestoreService'
 import type { AuthUser } from './authStore'
@@ -71,6 +72,8 @@ interface CardStore {
   clearUserData: () => void
   /** 新增一張卡片（同時存到 Firestore / LocalStorage）*/
   addCard: (card: VerseCard, uid: string | null) => Promise<void>
+  /** 為某張卡片寫入 AI 解析快取 */
+  saveAnalysis: (cardId: string, aiAnalysis: string, uid: string | null) => Promise<void>
 }
 
 export const useCardStore = create<CardStore>((set, get) => ({
@@ -153,6 +156,26 @@ export const useCardStore = create<CardStore>((set, get) => ({
       ]).catch(err => console.error('Failed to save card to Firestore:', err))
     } else {
       // Guest / mock user → localStorage
+      const { cards, lastDrawDate, todayCard } = get()
+      localSave({ cards, lastDrawDate, todayCard })
+    }
+  },
+
+  saveAnalysis: async (cardId, aiAnalysis, uid) => {
+    // 樂觀更新：將該張卡與 todayCard 都加上 aiAnalysis
+    set((state) => ({
+      cards: state.cards.map((c) => (c.id === cardId ? { ...c, aiAnalysis } : c)),
+      todayCard:
+        state.todayCard?.id === cardId
+          ? { ...state.todayCard, aiAnalysis }
+          : state.todayCard,
+    }))
+
+    if (uid && uid !== '__mock__') {
+      updateCardAnalysis(uid, cardId, aiAnalysis).catch((err) =>
+        console.error('Failed to save AI analysis to Firestore:', err)
+      )
+    } else {
       const { cards, lastDrawDate, todayCard } = get()
       localSave({ cards, lastDrawDate, todayCard })
     }

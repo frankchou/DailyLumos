@@ -57,6 +57,15 @@ export async function saveCard(uid: string, card: VerseCard): Promise<void> {
   await setDoc(ref, toStored(card))
 }
 
+export async function updateCardAnalysis(
+  uid: string,
+  cardId: string,
+  aiAnalysis: string
+): Promise<void> {
+  const ref = doc(requireDb(), 'users', uid, 'cards', cardId)
+  await updateDoc(ref, { aiAnalysis })
+}
+
 export async function loadCards(uid: string): Promise<StoredCard[]> {
   const q = query(
     collection(requireDb(), 'users', uid, 'cards'),
