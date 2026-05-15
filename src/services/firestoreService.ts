@@ -66,6 +66,41 @@ export async function updateCardAnalysis(
   await updateDoc(ref, { aiAnalysis })
 }
 
+// ─── 每日推播設定 ─────────────────────────────────────────────
+
+export interface PushSettings {
+  pushEnabled: boolean
+  pushHour: number // 0-23，台灣時間
+  pushMinute: number // 0 或 30
+  fcmToken: string
+}
+
+const DEFAULT_PUSH: PushSettings = {
+  pushEnabled: false,
+  pushHour: 8,
+  pushMinute: 0,
+  fcmToken: '',
+}
+
+export async function getPushSettings(uid: string): Promise<PushSettings> {
+  const snap = await getDoc(doc(requireDb(), 'users', uid))
+  if (!snap.exists()) return { ...DEFAULT_PUSH }
+  const d = snap.data() as Partial<PushSettings>
+  return {
+    pushEnabled: d.pushEnabled ?? DEFAULT_PUSH.pushEnabled,
+    pushHour: d.pushHour ?? DEFAULT_PUSH.pushHour,
+    pushMinute: d.pushMinute ?? DEFAULT_PUSH.pushMinute,
+    fcmToken: d.fcmToken ?? DEFAULT_PUSH.fcmToken,
+  }
+}
+
+export async function savePushSettings(
+  uid: string,
+  settings: Partial<PushSettings>
+): Promise<void> {
+  await updateDoc(doc(requireDb(), 'users', uid), settings)
+}
+
 export async function loadCards(uid: string): Promise<StoredCard[]> {
   const q = query(
     collection(requireDb(), 'users', uid, 'cards'),

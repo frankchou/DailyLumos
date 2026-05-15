@@ -1,0 +1,19 @@
+name: Daily Push Reminders
+
+# 每 30 分鐘觸發一次（支援半小時提醒）。發送端會判斷誰的提醒時間已到、
+# 當天未抽卡、當天未通知過，並有 90 分鐘補送視窗吸收排程延遲。
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {} # 允許手動觸發測試
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call send-reminders endpoint
+        run: |
+          curl -sS -f -X POST \
+            "${{ vars.APP_URL }}/api/send-reminders" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "content-type: application/json"
