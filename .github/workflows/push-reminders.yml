@@ -12,8 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call send-reminders endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET 未設定（GitHub repo → Settings → Secrets and variables → Actions → Secrets）"
+            exit 1
+          fi
+          # 正式網址非機密，直接寫死，少一個要設定的東西
           curl -sS -f -X POST \
-            "${{ vars.APP_URL }}/api/send-reminders" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "https://daily-lumos.vercel.app/api/send-reminders" \
+            -H "x-cron-secret: $CRON_SECRET" \
             -H "content-type: application/json"
