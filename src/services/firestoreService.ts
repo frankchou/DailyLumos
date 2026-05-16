@@ -71,7 +71,7 @@ export async function updateCardAnalysis(
 export interface PushSettings {
   pushEnabled: boolean
   pushHour: number // 0-23，台灣時間
-  pushMinute: number // 0 或 30
+  pushMinute: number // 0-59，台灣時間
   fcmToken: string
 }
 

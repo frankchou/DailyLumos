@@ -32,11 +32,15 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
 // 正式環境（Production）不設此變數 → 按鈕不會出現。
 const SHOW_PUSH_TEST = import.meta.env.VITE_ENABLE_PUSH_TEST === 'true'
 
-// 半小時間隔的時間選項（00:00、00:30 … 23:30），value = 一天中的總分鐘數
-const TIME_SLOTS = Array.from({ length: 48 }).map((_, i) => ({
-  total: i * 30,
-  label: `${pad2(Math.floor((i * 30) / 60))}:${pad2((i * 30) % 60)}`,
-}))
+// 提醒時間以「時 / 分」兩個選單組合，可精確到每分鐘
+const HOURS = Array.from({ length: 24 }, (_, i) => i)
+const MINUTES = Array.from({ length: 60 }, (_, i) => i)
+
+const selectStyle = {
+  background: 'rgba(212,168,83,0.12)',
+  border: '1px solid rgba(212,168,83,0.3)',
+  color: '#3D2B1F',
+} as const
 
 export function ReminderSettings({ open, onClose }: ReminderSettingsProps) {
   const { user } = useAuthStore()
@@ -124,16 +128,6 @@ export function ReminderSettings({ open, onClose }: ReminderSettingsProps) {
     }
     await persist({ pushEnabled: true, fcmToken: result.token })
   }, [settings.pushEnabled, iosNeedsInstall, persist])
-
-  const handleTimeChange = useCallback(
-    (totalMinutes: number) => {
-      persist({
-        pushHour: Math.floor(totalMinutes / 60),
-        pushMinute: totalMinutes % 60,
-      })
-    },
-    [persist]
-  )
 
   const handleTestPush = useCallback(async () => {
     setError(null)
@@ -262,22 +256,37 @@ export function ReminderSettings({ open, onClose }: ReminderSettingsProps) {
                             <p className="font-sans text-sm font-medium" style={{ color: '#3D2B1F' }}>
                               提醒時間
                             </p>
-                            <select
-                              value={settings.pushHour * 60 + settings.pushMinute}
-                              onChange={(e) => handleTimeChange(Number(e.target.value))}
-                              className="font-sans text-sm rounded-xl px-3 py-2"
-                              style={{
-                                background: 'rgba(212,168,83,0.12)',
-                                border: '1px solid rgba(212,168,83,0.3)',
-                                color: '#3D2B1F',
-                              }}
-                            >
-                              {TIME_SLOTS.map((slot) => (
-                                <option key={slot.total} value={slot.total}>
-                                  {slot.label}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={settings.pushHour}
+                                onChange={(e) => persist({ pushHour: Number(e.target.value) })}
+                                className="font-sans text-sm rounded-xl px-3 py-2"
+                                style={selectStyle}
+                                aria-label="提醒時"
+                              >
+                                {HOURS.map((h) => (
+                                  <option key={h} value={h}>
+                                    {pad2(h)}
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="font-sans text-sm" style={{ color: '#8B6E5A' }}>
+                                :
+                              </span>
+                              <select
+                                value={settings.pushMinute}
+                                onChange={(e) => persist({ pushMinute: Number(e.target.value) })}
+                                className="font-sans text-sm rounded-xl px-3 py-2"
+                                style={selectStyle}
+                                aria-label="提醒分"
+                              >
+                                {MINUTES.map((m) => (
+                                  <option key={m} value={m}>
+                                    {pad2(m)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
 
                           {/* 發送測試通知 — 只在測試環境顯示 */}
