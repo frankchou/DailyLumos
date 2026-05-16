@@ -1,11 +1,12 @@
 // Vercel Serverless Function（Node runtime）：每日抽卡提醒發送端
 //
-// 由 GitHub Actions 每 30 分鐘呼叫一次。流程：
+// 由外部排程器「每分鐘」呼叫一次（cron-job.org），確保提醒誤差在 1 分鐘內。
+// 流程：
 //   1. 驗證 x-cron-secret
 //   2. 算出現在台灣時間
 //   3. 撈出 pushEnabled 的使用者，挑出：
 //        - 設定的提醒時間「已到」（now >= 設定時間）
-//        - 且還在 90 分鐘的補送視窗內（吸收 cron 誤差）
+//        - 且還在補送視窗內（吸收偶發的呼叫失敗）
 //        - 且當天還沒抽卡（lastDrawDate !== 今天）
 //        - 且當天還沒通知過（lastNotifiedDate !== 今天）
 //   4. 發 FCM，成功後標記 lastNotifiedDate
@@ -25,9 +26,10 @@ interface VercelRes {
   json: (data: unknown) => void
 }
 
-// 補送視窗（分鐘）：提醒時間到了之後，這段時間內的 cron 都會補送，
-// 用來吸收 GitHub Actions 排程的延遲誤差。
-const CATCHUP_WINDOW_MIN = 90
+// 補送視窗（分鐘）：提醒時間到了之後，這段時間內的呼叫都會補送。
+// 排程器每分鐘呼叫一次，正常情況提醒時間一到就推（誤差 < 1 分鐘）；
+// 此視窗只是安全網，吸收偶發的呼叫失敗。超過視窗才放棄，避免推出過期提醒。
+const CATCHUP_WINDOW_MIN = 10
 
 // 引導「先禱告、再抽卡」的溫暖提醒文案（依日期輪替，當天所有人一致）。
 // 語氣親切口語、帶領感；今日箴言是主為你預備的禮物與方向。
