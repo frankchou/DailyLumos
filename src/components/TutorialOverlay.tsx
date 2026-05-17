@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useLayoutEffect } from 'react'
+import { useEffect, useState, useCallback, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTutorialStore } from '../store/tutorialStore'
@@ -369,17 +369,40 @@ function Coachmark({
 // ─── 主元件 ───────────────────────────────────────────────────
 
 export function TutorialOverlay() {
-  const { active, device, stations, index, next, prev, finish } = useTutorialStore()
+  const { active, device, stations, index, next, prev, finish, skipUnalignableStation } =
+    useTutorialStore()
   const { user } = useAuthStore()
   const isMobileDevice = device === 'mobile'
 
   const station = stations[index]
   // 展示站（站③卡片互動、站④倒數計時）皆「疊在真實目標位置」：對位真實
   // 畫面錨點元素，把展示元件疊在原地，視覺上像在原地呈現該功能。
+  // （站②抽卡按鈕不是展示站，對位真實 DrawButton。）
   const isDemoAtTarget =
     station?.demo === true && station?.demoAtTarget === true
   const demoKind = station?.demoKind
   const [rect, setRect] = useState<TargetRect | null>(null)
+
+  // 站④（倒數計時展示站）：量測 TutorialDemoCountdown 自身的自然內容尺寸。
+  // 挖空框與暖米底盒要「貼合倒數內容本身」，不可鋪滿整個 card-action-area
+  // 錨點（那會變成一張大卡片）。以一個離畫面的隱藏節點量測自然尺寸。
+  const countdownMeasureRef = useRef<HTMLDivElement>(null)
+  const [countdownSize, setCountdownSize] = useState<{
+    width: number
+    height: number
+  } | null>(null)
+  useLayoutEffect(() => {
+    if (!active || demoKind !== 'countdown') {
+      setCountdownSize(null)
+      return
+    }
+    const el = countdownMeasureRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    if (r.width > 0 && r.height > 0) {
+      setCountdownSize({ width: r.width, height: r.height })
+    }
+  }, [active, demoKind])
 
   // 視窗寬度納入 state，使說明卡寬度能隨旋轉螢幕 / 縮放更新（review L-3）
   const [viewportWidth, setViewportWidth] = useState(() =>
@@ -435,18 +458,19 @@ export function TutorialOverlay() {
         const vh = window.innerHeight
         setRect({ top: vh / 2 - 200, left: vw / 2 - 140, width: 280, height: 400 })
       } else {
-        // 一般站目標始終不存在 → 跳過此站（last station 則結束教學）。
-        // 記 log 以利線上追查跳號情形（review L-4）。
+        // 一般站目標始終不存在 → 跳過此站。依最近移動方向往前 / 往後跳
+        // （skipUnalignableStation），確保上一步 / 下一步兩個方向都不會
+        // 卡在被跳過的站上。記 log 以利線上追查跳號情形（review L-4）。
         console.warn(
           `[tutorial] 站點「${station.id}」對位逾時，目標 data-tutorial="${station.targetKey}" 未出現，自動跳過`
         )
-        next()
+        skipUnalignableStation()
       }
     }
     setRect(null) // 轉場期間先暫隱，待對位完成再顯示
     frame = requestAnimationFrame(tryAlign)
     return () => cancelAnimationFrame(frame)
-  }, [active, station, next])
+  }, [active, station, skipUnalignableStation])
 
   // resize / scroll 時跟隨重算；resize 另更新視窗寬度供說明卡重算寬度
   useEffect(() => {
@@ -475,15 +499,39 @@ export function TutorialOverlay() {
   // 其餘情況（桌機、站④等）displayRect 即真實 rect，行為不變。
   const cardDemoScale =
     hasCallouts && isMobileDevice ? MOBILE_CARD_DEMO_SCALE : 1
-  const displayRect: TargetRect | null =
-    rect && cardDemoScale !== 1
-      ? {
-          width: rect.width * cardDemoScale,
-          height: rect.height * cardDemoScale,
-          left: rect.left + (rect.width * (1 - cardDemoScale)) / 2,
-          top: rect.top + (rect.height * (1 - cardDemoScale)) / 2,
-        }
-      : rect
+
+  // displayRect = 挖空框 / 展示元件 / 說明卡擺位實際依據的矩形。
+  //  · 站③手機版：真實卡片 rect 等比縮小、仍置於原 rect 中央。
+  //  · 站④桌機：桌機錨點槽位（DesktopInfoPanel 左欄裝真實 CountdownTimer
+  //         的 w-fit 容器）本身就緊貼真實倒數，故直接套槽位 rect ——
+  //         展示倒數即精準重疊真實倒數，不可自行量測尺寸再置中（錨點
+  //         比內容寬時，置中會把展示倒數整體往右推，造成水平偏移）。
+  //  · 站④手機：手機錨點是鋪滿操作區的大方框（inset-0），遠大於倒數內容，
+  //         故仍以 countdownSize 量測倒數自然尺寸、置於錨點中央，挖空才會
+  //         貼合倒數本身、不鋪成一張大卡片。
+  //  · 其餘站：displayRect 即真實 rect。
+  const isDesktopCountdown =
+    demoKind === 'countdown' && station?.targetKey === 'countdown-demo-anchor-desktop'
+  let displayRect: TargetRect | null = rect
+  if (rect && demoKind === 'countdown' && isDesktopCountdown) {
+    // 桌機：直接用錨點槽位 rect（已緊貼真實倒數），精準重疊。
+    displayRect = rect
+  } else if (rect && demoKind === 'countdown' && countdownSize) {
+    // 手機：量測倒數自然尺寸，置於大方框錨點中央。
+    displayRect = {
+      width: countdownSize.width,
+      height: countdownSize.height,
+      left: rect.left + (rect.width - countdownSize.width) / 2,
+      top: rect.top + (rect.height - countdownSize.height) / 2,
+    }
+  } else if (rect && cardDemoScale !== 1) {
+    displayRect = {
+      width: rect.width * cardDemoScale,
+      height: rect.height * cardDemoScale,
+      left: rect.left + (rect.width * (1 - cardDemoScale)) / 2,
+      top: rect.top + (rect.height * (1 - cardDemoScale)) / 2,
+    }
+  }
 
   const pad = isMobileDevice ? 8 : 10
   // 挖空框幾何（含 padding）；displayRect 為 null（轉場 / 未對位）時無挖空
@@ -561,6 +609,20 @@ export function TutorialOverlay() {
           />
         </svg>
 
+        {/* 站④倒數展示站：離畫面的隱藏量測節點。以倒數展示元件的自然
+            尺寸決定挖空框與暖米底盒大小（貼合內容、不鋪大框）。放在
+            視窗外、不可見、不佔互動，量到尺寸後即不再重排。 */}
+        {demoKind === 'countdown' && (
+          <div
+            ref={countdownMeasureRef}
+            aria-hidden="true"
+            className="pointer-events-none fixed"
+            style={{ top: -9999, left: -9999, visibility: 'hidden' }}
+          >
+            <TutorialDemoCountdown />
+          </div>
+        )}
+
         {/* 展示站專用：在 spotlight 內渲染展示用元件。
             此元件只活在教學 overlay 內 —— 不碰真實頁面、不影響系統狀態，
             教學結束時隨 overlay 一起卸載，無殘留。
@@ -568,9 +630,11 @@ export function TutorialOverlay() {
             ① 卡片互動站（demoKind='card'）：展示卡疊在「真實卡片區域」量測到
                的 rect 上 —— 同位置、貼合大小，視覺上像在原地把卡片呈現出來。
                ①② 編號說明已併入說明卡內，卡片上保留對應的 ①② 位置標記。
-            ② 倒數計時站（demoKind='countdown'）：展示倒數疊在「抽卡按鈕」量測
-               到的 rect 上 —— 即抽完卡後真實倒數計時實際出現的位置（手機版
-               按鈕位置會換成倒數；桌機版左欄資訊區）。 */}
+            ② 倒數計時站（demoKind='countdown'）：展示倒數定位在卡片下方「常駐
+               操作區容器」錨點的中央 —— 即抽完卡後真實倒數計時實際出現的
+               位置（手機版按鈕位置會換成倒數；桌機版左欄資訊區）。挖空框與
+               暖米底盒貼合倒數內容本身的大小（量測 TutorialDemoCountdown），
+               不鋪滿整個錨點容器，不會變成一張大卡片。 */}
         {isDemoAtTarget && rect && displayRect && demoKind === 'card' && (
           <div
             className="absolute pointer-events-none"
@@ -597,8 +661,10 @@ export function TutorialOverlay() {
           <div
             className="absolute pointer-events-none flex items-center justify-center"
             style={{
-              // 暖米底盒鋪滿整個挖空(cutout)區域 —— 與挖空框等大、等圓角，
-              // 不透明地完整蓋住底下真實抽卡按鈕，挖空邊緣不透出真實內容。
+              // 暖米底盒貼合挖空(cutout)區域 —— 此處 cutout 已是「倒數內容
+              // 自然尺寸 + padding」（見 displayRect 的 countdown 分支），
+              // 故底盒只有倒數那一小塊大小，不透明地蓋住底下真實內容，
+              // 不會鋪成一張大卡片。
               top: cutout.y,
               left: cutout.x,
               width: cutout.width,

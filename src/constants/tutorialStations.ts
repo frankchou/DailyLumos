@@ -11,10 +11,14 @@ export type TutorialDevice = 'mobile' | 'desktop'
 export type TutorialTargetKey =
   | 'mobile-nav' // 手機底部導覽列
   | 'sidebar-nav' // 桌機左側 Sidebar 導覽
-  | 'draw-button' // 抽卡按鈕
+  | 'draw-button' // 真實抽卡按鈕（站②對位；今天已抽卡時不存在，站②自動跳過）
   | 'card-area' // 卡片區域容器
   | 'countdown' // 倒數計時（抽完卡後的真實倒數）
-  | 'countdown-demo-anchor' // 倒數計時展示站的對位錨點（未抽卡時倒數所在位置）
+  // 倒數計時展示站（站④）的對位錨點 —— 手機 / 桌機各一個常駐量測點。
+  // 手機與桌機的真實倒數出現位置不同（手機在卡片下方操作區、桌機在
+  // 左欄資訊區），故各自獨立一個 targetKey，避免靠 DOM 順序猜而對錯位。
+  | 'countdown-demo-anchor-mobile' // 手機：卡片下方操作區的常駐量測點
+  | 'countdown-demo-anchor-desktop' // 桌機：左欄資訊區的常駐量測點
   | 'user-menu' // 手機右上角頭像按鈕
   | 'user-section' // 桌機 Sidebar 底部使用者區塊
   | 'menu-reminder' // 使用者選單內「每日提醒設定」
@@ -43,6 +47,9 @@ export interface TutorialStation {
    * 渲染一個純展示元件（卡片互動站用 TutorialDemoCard、倒數計時站用
    * TutorialDemoCountdown）。新使用者尚未抽卡、真實互動元素不存在時，
    * 靠此旗標讓該站照常顯示、不被自動跳過、進度不跳號。
+   *
+   * 註：站②（抽卡按鈕）不是展示站 —— 它對位真實 DrawButton；今天已
+   * 抽卡、按鈕不存在時，站②會被導航防呆機制自動跳過（依移動方向）。
    */
   demo?: boolean
   /**
@@ -74,6 +81,8 @@ const MOBILE_STATIONS: TutorialStation[] = [
     cutoutRadius: 16,
   },
   {
+    // 站②對位真實抽卡按鈕。今天已抽卡時按鈕不存在 → 此站對位逾時，
+    // 由導航防呆自動跳過（依移動方向），進度不卡死。
     id: 'draw-button',
     targetKey: 'draw-button',
     eyebrow: 'DAILY VERSE',
@@ -94,7 +103,7 @@ const MOBILE_STATIONS: TutorialStation[] = [
   },
   {
     id: 'countdown',
-    targetKey: 'countdown-demo-anchor',
+    targetKey: 'countdown-demo-anchor-mobile',
     eyebrow: 'NEXT VERSE',
     title: '明日再來',
     body: '抽過卡後，這裡會顯示距離下一張還有多久。時間到了，再回來領取主新的話。',
@@ -144,6 +153,8 @@ const DESKTOP_STATIONS: TutorialStation[] = [
     cutoutRadius: 16,
   },
   {
+    // 站②對位真實抽卡按鈕。今天已抽卡時按鈕不存在 → 此站對位逾時，
+    // 由導航防呆自動跳過（依移動方向），進度不卡死。
     id: 'draw-button',
     targetKey: 'draw-button',
     eyebrow: 'DAILY VERSE',
@@ -164,7 +175,7 @@ const DESKTOP_STATIONS: TutorialStation[] = [
   },
   {
     id: 'countdown',
-    targetKey: 'countdown-demo-anchor',
+    targetKey: 'countdown-demo-anchor-desktop',
     eyebrow: 'NEXT VERSE',
     title: '明日再來',
     body: '抽過卡後，這裡會顯示距離下一張還有多久。時間到了，再回來領取主新的話。',

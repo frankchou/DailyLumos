@@ -77,9 +77,6 @@ function DesktopInfoPanel({ today, drawState, todayCard }: {
               <br />
               讓一句話陪你度過這一天。
             </p>
-            {/* 抽完卡後此左欄會顯示倒數計時；教學站④以這塊為對位錨點，
-                把展示倒數疊在桌機版倒數計時實際出現的區域 */}
-            <div data-tutorial="countdown-demo-anchor" className="w-fit h-12" />
           </motion.div>
         ) : (
           <motion.div
@@ -107,12 +104,38 @@ function DesktopInfoPanel({ today, drawState, todayCard }: {
               <br />
               伴你同行。
             </p>
-            <div data-tutorial="countdown" className="w-fit">
-              <CountdownTimer />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 倒數計時槽 —— 常駐容器：抽卡前 / 抽卡後皆存在（抽卡前為空、
+          抽卡後裝真實 CountdownTimer）。
+          此容器同時是教學站④的桌機對位錨點（countdown-demo-anchor-desktop）：
+          標記桌機版倒數計時實際出現的位置（左欄資訊區）。
+          以 w-fit 緊貼倒數內容、給最小高度避免抽卡前塌成 0 高 ——
+          槽位 rect 即真實倒數所在的精準矩形，教學站④可直接套用此 rect
+          讓展示倒數精準重疊真實倒數，無需自行量測 + 置中（會偏移）。
+          手機錨點則另在 CardArea 內，兩者互不干擾。 */}
+      <div
+        data-tutorial="countdown-demo-anchor-desktop"
+        className="flex min-h-[2.75rem] w-fit items-center"
+      >
+        <AnimatePresence>
+          {drawState === 'done' && (
+            <motion.div
+              key="desktop-countdown"
+              data-tutorial="countdown"
+              className="w-fit"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CountdownTimer />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* 裝飾元素 */}
       <div className="flex items-center gap-2 opacity-30">
@@ -181,40 +204,58 @@ function CardArea({ flipped, drawState, todayCard, handleDraw, isLoading, canDra
         )}
       </div>
 
-      {/* 手機版底部按鈕/倒數（桌面版這裡只顯示按鈕，倒數在左欄） */}
-      <AnimatePresence mode="wait">
-        {drawState !== 'done' ? (
-          <motion.div
-            key="btn"
-            /* 抽卡按鈕的位置 = 抽完卡後手機版倒數計時的位置；
-               教學站④（倒數計時）以此為對位錨點，把展示倒數疊在原地 */
-            data-tutorial="countdown-demo-anchor"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <DrawButton
-              onClick={handleDraw}
-              loading={isLoading || drawState === 'loading' || drawState === 'revealing'}
-              disabled={!canDrawToday()}
-            />
-          </motion.div>
-        ) : (
-          /* 手機版在此顯示倒數，桌面版已在左欄顯示 */
-          <motion.div
-            key="mobile-countdown"
-            data-tutorial="countdown"
-            className="lg:hidden"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-          >
-            <CountdownTimer />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 手機版底部按鈕/倒數（桌面版這裡只顯示按鈕，倒數在左欄）。
+
+          外層是常駐容器 —— 無論今天是否已抽卡都存在（抽卡前裝
+          DrawButton、抽卡後裝倒數）。容器設 min-height，使內含的
+          `countdown-demo-anchor-mobile` 量測點不會塌成 0 高。
+
+          站②（抽卡按鈕）：對位真實 DrawButton 本身（DrawButton.tsx 的
+                `data-tutorial="draw-button"`）。今天已抽卡、按鈕不存在
+                時，站②對位逾時 → 由導航防呆自動跳過。
+          站④（倒數計時）：容器內另放一個常駐的手機對位量測點
+                `countdown-demo-anchor-mobile`，標記抽完卡後倒數實際出現的
+                位置；手機版教學站④以它為錨點把展示倒數疊在該位置（盒子
+                貼合倒數內容大小）。桌機錨點則另在 DesktopInfoPanel 左欄。 */}
+      <div className="relative flex min-h-[112px] min-w-[128px] items-center justify-center">
+        {/* 站④倒數計時的手機對位量測點：常駐、與容器同範圍、不可見、不佔互動。
+            鋪滿父容器即可，無論按鈕或倒數都在這塊範圍內。 */}
+        <div
+          data-tutorial="countdown-demo-anchor-mobile"
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
+        />
+        <AnimatePresence mode="wait">
+          {drawState !== 'done' ? (
+            <motion.div
+              key="btn"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <DrawButton
+                onClick={handleDraw}
+                loading={isLoading || drawState === 'loading' || drawState === 'revealing'}
+                disabled={!canDrawToday()}
+              />
+            </motion.div>
+          ) : (
+            /* 手機版在此顯示倒數，桌面版已在左欄顯示 */
+            <motion.div
+              key="mobile-countdown"
+              data-tutorial="countdown"
+              className="lg:hidden"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4 }}
+            >
+              <CountdownTimer />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
