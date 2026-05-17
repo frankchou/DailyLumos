@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import type { User } from 'firebase/auth'
 
+/**
+ * 本地 emulator 的 mock 使用者 uid。
+ * mock 環境不持久化、也不應寫入正式 Firestore，多處需據此判定，
+ * 故抽成單一常數共用，避免字面值散落各處漂移。
+ */
+export const MOCK_UID = '__mock__'
+
 export interface AuthUser {
   uid: string
   displayName: string

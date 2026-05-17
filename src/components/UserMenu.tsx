@@ -2,14 +2,18 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 import { useCardStore } from '../store/cardStore'
+import { useTutorialStore } from '../store/tutorialStore'
 import { signOut } from '../services/authService'
 import { InstallGuide } from './InstallGuide'
 import { ReminderSettings } from './ReminderSettings'
+import { CompassIcon } from './CompassIcon'
 import { detectOS, isStandalone } from '../lib/platform'
 
 export function UserMenu() {
   const { user } = useAuthStore()
   const { clearUserData, cards } = useCardStore()
+  const { active: tutorialActive, menuShouldOpen, start: startTutorial } =
+    useTutorialStore()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
@@ -21,8 +25,16 @@ export function UserMenu() {
   // 推播只在手機提供（桌面不推播）
   const showReminderItem = isMobile
 
-  // 點擊外部關閉
+  // 教學進行中：依教學需要自動展開 / 收合選單（手機站⑤⑥⑦編排）。
+  // 教學結束時 menuShouldOpen 變回 false，選單一併收合，回到乾淨抽卡頁。
   useEffect(() => {
+    if (!tutorialActive) return
+    setOpen(menuShouldOpen)
+  }, [tutorialActive, menuShouldOpen])
+
+  // 點擊外部關閉。教學進行中不受此影響（選單由教學編排控制）。
+  useEffect(() => {
+    if (tutorialActive) return
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false)
@@ -30,7 +42,7 @@ export function UserMenu() {
     }
     if (open) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [open, tutorialActive])
 
   if (!user) return null
 
@@ -49,6 +61,7 @@ export function UserMenu() {
     <div ref={ref} className="relative">
       {/* 頭像按鈕 */}
       <button
+        data-tutorial="user-menu"
         onClick={() => setOpen((v) => !v)}
         className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden transition-all active:scale-90"
         style={{ outline: '2px solid rgba(212,168,83,0.4)', outlineOffset: '1px' }}
@@ -133,6 +146,7 @@ export function UserMenu() {
             {/* 每日提醒設定（手機）*/}
             {showReminderItem && (
               <button
+                data-tutorial="menu-reminder"
                 onClick={() => {
                   setReminderOpen(true)
                   setOpen(false)
@@ -158,6 +172,7 @@ export function UserMenu() {
             {/* 加到主畫面（手機、未安裝時）*/}
             {showInstallItem && (
               <button
+                data-tutorial="menu-install"
                 onClick={() => {
                   setGuideOpen(true)
                   setOpen(false)
@@ -174,6 +189,21 @@ export function UserMenu() {
                 加到主畫面
               </button>
             )}
+
+            {/* 功能導引（重看教學入口）*/}
+            <button
+              onClick={() => {
+                setOpen(false)
+                startTutorial({ isAuto: false, uid: user.uid })
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 font-sans text-sm transition-colors duration-150"
+              style={{ color: '#8B6E5A', borderBottom: '1px solid rgba(212,168,83,0.15)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(212,168,83,0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+            >
+              <CompassIcon />
+              功能導引
+            </button>
 
             {/* 登出 */}
             <button

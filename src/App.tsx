@@ -12,15 +12,20 @@ import { useCardStore } from './store/cardStore'
 import { useAuthStore, type AuthUser } from './store/authStore'
 import { onAuthChange } from './services/authService'
 import { isFirebaseConfigured } from './lib/firebase'
+import { TutorialOverlay } from './components/TutorialOverlay'
+import { useTutorialAutoStart } from './hooks/useTutorialAutoStart'
 
 const IS_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true'
 const MOCK_AUTH_KEY = 'daily-lumos-mock-auth'
 
 function AuthenticatedApp() {
   const { currentPage } = useCardStore()
+  // 首次登入自動顯示功能導引教學（內含載入完成判定）
+  useTutorialAutoStart()
 
   return (
     <Layout>
+      <TutorialOverlay />
       <Suspense fallback={null}>
         <AnimatePresence mode="wait">
           {currentPage === 'draw' ? (

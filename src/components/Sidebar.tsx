@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCardStore } from '../store/cardStore'
 import { useAuthStore } from '../store/authStore'
+import { useTutorialStore } from '../store/tutorialStore'
 import { signOut } from '../services/authService'
+import { CompassIcon } from './CompassIcon'
 import type { AppPage } from '../types'
 
 interface NavItem {
@@ -55,6 +57,7 @@ const navItems: NavItem[] = [
 function UserSection() {
   const { user } = useAuthStore()
   const { clearUserData, cards } = useCardStore()
+  const { start: startTutorial } = useTutorialStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -83,6 +86,7 @@ function UserSection() {
   return (
     <div ref={ref} className="relative">
       <button
+        data-tutorial="user-section"
         onClick={() => setMenuOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-150 active:scale-[0.98]"
         style={{
@@ -143,6 +147,21 @@ function UserSection() {
             <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
               <p className="font-sans text-xs" style={{ color: '#C4A882' }}>{user.email}</p>
             </div>
+            {/* 功能導引（重看教學入口，置於登出之上）*/}
+            <button
+              onClick={() => {
+                setMenuOpen(false)
+                if (user) startTutorial({ isAuto: false, uid: user.uid })
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 font-sans text-sm transition-colors duration-150"
+              style={{ color: '#8B6E5A', borderBottom: '1px solid rgba(212,168,83,0.15)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(212,168,83,0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+            >
+              <CompassIcon />
+              功能導引
+            </button>
+
             {/* 登出 */}
             <button
               onClick={handleSignOut}
@@ -213,7 +232,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav Items */}
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+      <nav data-tutorial="sidebar-nav" className="flex-1 px-3 py-4 flex flex-col gap-1">
         {navItems.map((item) => {
           const active = currentPage === item.id
           return (

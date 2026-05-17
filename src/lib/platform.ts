@@ -23,6 +23,20 @@ export function isMobile(): boolean {
   return detectOS() !== 'desktop'
 }
 
+/**
+ * 版面斷點：視窗寬 ≥ 1024px 為桌機（寬版）佈局。
+ * 與 Layout.tsx 的 Tailwind `lg:` 斷點一致。
+ * 功能導引教學以此判定要走桌機版或手機版站點，
+ * 確保教學版本與當下實際渲染的版面（NavBar / Sidebar）相符。
+ */
+export const DESKTOP_BREAKPOINT_PX = 1024
+
+/** 當下視窗寬度是否落在桌機（寬版）佈局 */
+export function isDesktopViewport(): boolean {
+  if (typeof window === 'undefined') return true
+  return window.innerWidth >= DESKTOP_BREAKPOINT_PX
+}
+
 /** App 是否已以「主畫面 PWA」模式開啟（已安裝）*/
 export function isStandalone(): boolean {
   if (typeof window === 'undefined') return false

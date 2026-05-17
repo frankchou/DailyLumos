@@ -77,6 +77,9 @@ function DesktopInfoPanel({ today, drawState, todayCard }: {
               <br />
               讓一句話陪你度過這一天。
             </p>
+            {/* 抽完卡後此左欄會顯示倒數計時；教學站④以這塊為對位錨點，
+                把展示倒數疊在桌機版倒數計時實際出現的區域 */}
+            <div data-tutorial="countdown-demo-anchor" className="w-fit h-12" />
           </motion.div>
         ) : (
           <motion.div
@@ -104,7 +107,9 @@ function DesktopInfoPanel({ today, drawState, todayCard }: {
               <br />
               伴你同行。
             </p>
-            <CountdownTimer />
+            <div data-tutorial="countdown" className="w-fit">
+              <CountdownTimer />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -138,47 +143,52 @@ function CardArea({ flipped, drawState, todayCard, handleDraw, isLoading, canDra
 }) {
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Card */}
-      {drawState === 'done' && todayCard ? (
-        /* 抽完後切換成可互動的 AnalysisCard（自帶翻面 + AI 解析 + 章節 modal）*/
-        <AnalysisCard
-          card={todayCard}
-          width="280px"
-          height="400px"
-        />
-      ) : (
-        /* 抽卡進行中 / 尚未抽：維持原本的翻面動畫 */
-        <div
-          className="perspective"
-          style={{ width: '280px', height: '400px' }}
-        >
-          <div className={`card-inner ${flipped ? 'flipped' : ''}`}>
-            <div className="card-face card-back">
-              <AnimatePresence>
-                {drawState === 'revealing' && todayCard && (
-                  <motion.div
-                    className="w-full h-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.35, duration: 0.4 }}
-                  >
-                    <VerseCard card={todayCard} size="full" className="w-full h-full" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="card-face">
-              <CardBack className="w-full h-full" />
+      {/* Card —— data-tutorial 容器固定包住整個卡片區域（教學站③挖空目標，FR-8.2）*/}
+      <div data-tutorial="card-area">
+        {drawState === 'done' && todayCard ? (
+          /* 抽完後切換成可互動的 AnalysisCard（自帶翻面 + AI 解析 + 章節 modal）*/
+          <AnalysisCard
+            card={todayCard}
+            width="280px"
+            height="400px"
+          />
+        ) : (
+          /* 抽卡進行中 / 尚未抽：維持原本的翻面動畫 */
+          <div
+            className="perspective"
+            style={{ width: '280px', height: '400px' }}
+          >
+            <div className={`card-inner ${flipped ? 'flipped' : ''}`}>
+              <div className="card-face card-back">
+                <AnimatePresence>
+                  {drawState === 'revealing' && todayCard && (
+                    <motion.div
+                      className="w-full h-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.35, duration: 0.4 }}
+                    >
+                      <VerseCard card={todayCard} size="full" className="w-full h-full" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="card-face">
+                <CardBack className="w-full h-full" />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 手機版底部按鈕/倒數（桌面版這裡只顯示按鈕，倒數在左欄） */}
       <AnimatePresence mode="wait">
         {drawState !== 'done' ? (
           <motion.div
             key="btn"
+            /* 抽卡按鈕的位置 = 抽完卡後手機版倒數計時的位置；
+               教學站④（倒數計時）以此為對位錨點，把展示倒數疊在原地 */
+            data-tutorial="countdown-demo-anchor"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -194,6 +204,7 @@ function CardArea({ flipped, drawState, todayCard, handleDraw, isLoading, canDra
           /* 手機版在此顯示倒數，桌面版已在左欄顯示 */
           <motion.div
             key="mobile-countdown"
+            data-tutorial="countdown"
             className="lg:hidden"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

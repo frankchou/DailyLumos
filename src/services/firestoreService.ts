@@ -101,6 +101,52 @@ export async function savePushSettings(
   await updateDoc(doc(requireDb(), 'users', uid), settings)
 }
 
+// ─── 功能導引教學旗標 ─────────────────────────────────────────
+
+export interface TutorialFlags {
+  tutorialSeenMobile: boolean
+  tutorialSeenDesktop: boolean
+}
+
+const DEFAULT_TUTORIAL: TutorialFlags = {
+  tutorialSeenMobile: false,
+  tutorialSeenDesktop: false,
+}
+
+/**
+ * 讀取教學旗標。欄位不存在或讀取失敗一律視為「未看過」（預設教學會顯示，FR-6.7）。
+ */
+export async function getTutorialFlags(uid: string): Promise<TutorialFlags> {
+  try {
+    const snap = await getDoc(doc(requireDb(), 'users', uid))
+    if (!snap.exists()) return { ...DEFAULT_TUTORIAL }
+    const d = snap.data() as Partial<TutorialFlags>
+    return {
+      tutorialSeenMobile: d.tutorialSeenMobile ?? DEFAULT_TUTORIAL.tutorialSeenMobile,
+      tutorialSeenDesktop: d.tutorialSeenDesktop ?? DEFAULT_TUTORIAL.tutorialSeenDesktop,
+    }
+  } catch (err) {
+    console.error('讀取教學旗標失敗，視為未看過：', err)
+    return { ...DEFAULT_TUTORIAL }
+  }
+}
+
+/**
+ * 標記某裝置版本的教學「已看過」。
+ * 寫入失敗不可阻斷使用者（EX-4），故吞錯只記 log。
+ */
+export async function markTutorialSeen(
+  uid: string,
+  device: 'mobile' | 'desktop'
+): Promise<void> {
+  const field = device === 'mobile' ? 'tutorialSeenMobile' : 'tutorialSeenDesktop'
+  try {
+    await updateDoc(doc(requireDb(), 'users', uid), { [field]: true })
+  } catch (err) {
+    console.error('寫入教學旗標失敗（可接受降級）：', err)
+  }
+}
+
 export async function loadCards(uid: string): Promise<StoredCard[]> {
   const q = query(
     collection(requireDb(), 'users', uid, 'cards'),

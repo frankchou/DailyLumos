@@ -78,6 +78,7 @@ export function NavBar() {
 
   return (
     <nav
+      data-tutorial="mobile-nav"
       className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t"
       style={{
         background: 'rgba(253, 248, 240, 0.95)',

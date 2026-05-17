@@ -7,6 +7,7 @@ interface DrawButtonProps {
 export function DrawButton({ onClick, disabled = false, loading = false }: DrawButtonProps) {
   return (
     <button
+      data-tutorial="draw-button"
       onClick={onClick}
       disabled={disabled || loading}
       className="relative flex flex-col items-center gap-3 group"
