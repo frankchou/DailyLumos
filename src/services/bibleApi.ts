@@ -7,6 +7,23 @@ const API_BASE = 'https://bible-api.com'
 const TRANSLATION = 'cuv'
 const TIMEOUT_MS = 6000
 
+// 單章書卷：整本聖經只有一章的書。bible-api.com 會把「書代碼+1」解讀成
+// 「第 1 節」而非「第 1 章」，導致只回傳一節。改用明確的節範圍 1:1-N
+// （N 為該書總節數）才能取得整章。
+const SINGLE_CHAPTER_LAST_VERSE: Record<string, number> = {
+  OBA: 21, // 俄巴底亞書
+  PHM: 25, // 腓利門書
+  '2JN': 13, // 約翰二書
+  '3JN': 14, // 約翰三書
+  JUD: 25, // 猶大書
+}
+
+/** 組出 bible-api.com 的章節參照；單章書卷改用節範圍以避開章/節歧義。 */
+function chapterRef(book: string, chapter: number): string {
+  const lastVerse = SINGLE_CHAPTER_LAST_VERSE[book]
+  return lastVerse ? `${book}+1:1-${lastVerse}` : `${book}+${chapter}`
+}
+
 export interface FetchVerseResult {
   book: string
   chapter: number
@@ -32,7 +49,7 @@ export async function fetchRandomVerseInChapter(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const url = `${API_BASE}/${book}+${chapter}?translation=${TRANSLATION}`
+    const url = `${API_BASE}/${chapterRef(book, chapter)}?translation=${TRANSLATION}`
     const res = await fetch(url, { signal: controller.signal })
     clearTimeout(timer)
 
@@ -72,7 +89,7 @@ export async function fetchChapter(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const url = `${API_BASE}/${book}+${chapter}?translation=${TRANSLATION}`
+    const url = `${API_BASE}/${chapterRef(book, chapter)}?translation=${TRANSLATION}`
     const res = await fetch(url, { signal: controller.signal })
     clearTimeout(timer)
 
